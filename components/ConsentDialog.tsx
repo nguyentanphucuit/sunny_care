@@ -1,7 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -9,10 +11,57 @@ import {
   View,
 } from "react-native";
 
+function CustomCheckbox({
+  isChecked,
+  onPress,
+}: {
+  isChecked: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.checkbox,
+        isChecked && styles.checkboxChecked,
+        pressed && styles.checkboxPressed,
+      ]}>
+      {isChecked && <Text style={styles.checkmark}>✓</Text>}
+    </Pressable>
+  );
+}
+
 const ConsentScreen = () => {
   const [isChecked, setIsChecked] = useState(true);
+  const router = useRouter();
 
-  const handleAccept = () => {};
+  const handleAccept = async () => {
+    try {
+      const now = new Date();
+      const consentData = {
+        isConsent: true,
+        timestamp: now.toISOString(),
+        formattedDate: now.toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      };
+
+      await AsyncStorage.setItem("userConsent", JSON.stringify(consentData));
+      router.replace("/");
+    } catch (error) {
+      console.error("Error saving consent:", error);
+    }
+  };
+
+  const handleDecline = () => {
+    router.replace("/");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,42 +87,32 @@ const ConsentScreen = () => {
             </Text>
           </Text>
 
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() => setIsChecked(!isChecked)}>
-            <View
-              style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-              {isChecked && (
-                <Ionicons name="checkmark" size={16} color="#fff" />
-              )}
-            </View>
+          <View style={styles.checkboxContainer}>
+            <CustomCheckbox
+              isChecked={isChecked}
+              onPress={() => setIsChecked(!isChecked)}
+            />
             <Text style={styles.checkboxText}>
               I agree to share personal information with the service provider
               Sunny Care and understand that the information will be kept
               confidential.
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.declineButton}>
+          <TouchableOpacity
+            style={styles.declineButton}
+            onPress={handleDecline}>
             <Text style={styles.declineButtonText}>Decline</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.acceptButton,
-              !isChecked && styles.acceptButtonDisabled,
-            ]}
-            disabled={!isChecked}
-            onPress={handleAccept}>
-            <Text
-              style={[
-                styles.acceptButtonText,
-                !isChecked && styles.acceptButtonTextDisabled,
-              ]}>
-              Accept
-            </Text>
-          </TouchableOpacity>
+          {isChecked && (
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={handleAccept}>
+              <Text style={styles.acceptButtonText}>Accept</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -84,9 +123,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  scrollView: {
-    flex: 1,
   },
   content: {
     flex: 1,
@@ -102,22 +138,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: 56,
     height: 56,
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#fff",
-    borderWidth: 2,
-    borderColor: "#dc3545",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconText: {
-    color: "#dc3545",
-    fontSize: 24,
-    fontWeight: "500",
-    fontStyle: "italic",
   },
   title: {
     fontSize: 18,
@@ -145,8 +165,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderWidth: 2,
     borderColor: "#ddd",
     borderRadius: 4,
@@ -159,6 +179,15 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     backgroundColor: "#27ae60",
     borderColor: "#27ae60",
+  },
+  checkboxPressed: {
+    opacity: 0.7,
+  },
+  checkmark: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    lineHeight: 20,
   },
   checkboxText: {
     fontSize: 14,
@@ -190,16 +219,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#28a745",
   },
-  acceptButtonDisabled: {
-    backgroundColor: "#95a5a6",
-  },
   acceptButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  acceptButtonTextDisabled: {
-    color: "#ecf0f1",
   },
 });
 

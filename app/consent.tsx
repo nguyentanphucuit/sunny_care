@@ -1,5 +1,17 @@
-import ConsentScreen from "../components/ConsentDialog";
+import ConsentScreen from "@/components/ConsentDialog";
+import { Stack } from "expo-router";
+import React from "react";
 
 export default function ConsentRoute() {
-  return <ConsentScreen />;
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: "Consent",
+          headerShown: true,
+        }}
+      />
+      <ConsentScreen />
+    </>
+  );
 }
